@@ -3,7 +3,6 @@
  */
 
 import {
-	AxesHelper,
 	Color,
 	IcosahedronGeometry,
 	Mesh,
@@ -13,6 +12,7 @@ import {
 	ShaderMaterial,
 	SphereGeometry,
 	Spherical,
+	SRGBColorSpace,
 	TextureLoader,
 	Uniform,
 	Vector3,
@@ -66,7 +66,12 @@ textureLoader.setPath('/src/assets/texture/');
  */
 
 const earthDayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
+earthDayMapTexture.colorSpace = SRGBColorSpace;
+earthDayMapTexture.anisotropy = 8;
+
 const earthNightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
+earthNightMapTexture.colorSpace = SRGBColorSpace;
+earthNightMapTexture.anisotropy = 8;
 
 /**
  * Scenes
@@ -109,9 +114,6 @@ const earthMaterial = new ShaderMaterial({
 });
 const earth = new Mesh(earthGeometry, earthMaterial);
 scene.add(earth);
-
-const axesHelper = new AxesHelper(3);
-scene.add(axesHelper);
 
 /**
  * Pane

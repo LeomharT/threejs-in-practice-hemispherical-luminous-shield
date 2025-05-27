@@ -23,11 +23,25 @@ void main()
     vec4 nightColor = texture2D(uEarthNightMapTexture, uv);
 
 
-    color = vec3(dayMix);
+    color = mix(
+        nightColor.rgb,
+        dayColor.rgb,
+        dayMix
+    );
 
     float fresnel = dot(vPosition, viewDirection) + 1.0;
     fresnel = pow(fresnel, 2.0);
 
+    vec3 reflection = reflect(-sunDirection, normal);
+    float specular = -dot(viewDirection, reflection);
+    specular = max(0.0, specular);
+    specular = pow(specular, 20.0);
+
+    color = vec3(specular);
+
 
     gl_FragColor = vec4(color, 1.0);
+
+    #include <colorspace_fragment>
+    #include <tonemapping_fragment>
 }
