@@ -1,3 +1,7 @@
+/**
+ * Basic
+ */
+
 import {
 	Color,
 	IcosahedronGeometry,
@@ -8,18 +12,14 @@ import {
 	ShaderMaterial,
 	SphereGeometry,
 	Spherical,
-	TextureLoader,
 	Uniform,
 	Vector3,
 	WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import './index.css';
-import fragmentShader from './shader/fragment.glsl?raw';
-import vertexShader from './shader/vertex.glsl?raw';
 
-const el = document.querySelector('#app') as HTMLDivElement;
+const el = document.querySelector('#root') as HTMLDivElement;
 
 const size = {
 	width: window.innerWidth,
@@ -27,104 +27,75 @@ const size = {
 	pixelRatio: Math.min(2, window.devicePixelRatio),
 };
 
-/**
- * Basic
- */
-
 const renderer = new WebGLRenderer({
-	antialias: true,
 	alpha: true,
+	antialias: true,
 });
 renderer.setSize(size.width, size.height);
-renderer.setPixelRatio(size.pixelRatio);
+renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setClearColor(new Color('#1e1e1e'));
 el.append(renderer.domElement);
 
 const scene = new Scene();
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(2, 2, 2);
+camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.dampingFactor = 0.05;
 
 const stats = new Stats();
 el.append(stats.dom);
 
 /**
- * Loaders
+ * Scenes
  */
 
-const textureLoader = new TextureLoader();
-textureLoader.setPath('/src/assets/texture');
+const uniforms: Record<string, Uniform> = {};
 
-/**
- * Textures
- */
-
-const specularCloudsTexture = textureLoader.load('/specularClouds.jpg');
-
-/**
- * Scene
- */
-
-const uniforms = {
-	uTime: new Uniform(0.0),
-
-	uSunPosition: new Uniform(new Vector3()),
-
-	uSpecularCloudsTexture: new Uniform(specularCloudsTexture),
-};
-
-const sunSpherical = new Spherical(1.0, Math.PI / 2, 0.5);
+const sunSpherical = new Spherical(0.5, Math.PI / 2);
 const sunPosition = new Vector3();
 
-const sunGeometry = new IcosahedronGeometry(0.1, 7);
+const sunGeometry = new IcosahedronGeometry(0.1, 5);
 const sunMaterial = new MeshBasicMaterial({ color: 'yellow' });
 const sun = new Mesh(sunGeometry, sunMaterial);
 
-function updateSun() {
-	// Position
-	sunPosition.setFromSpherical(sunSpherical);
-
-	// Sun
-	sun.position.copy(sunPosition.multiplyScalar(5.0));
-
-	// Uniform
-	uniforms.uSunPosition.value.copy(sunPosition);
-}
-updateSun();
-
 scene.add(sun);
 
-const sphereGeometry = new SphereGeometry(1, 32, 32);
-const sphereMaterial = new ShaderMaterial({
-	fragmentShader,
-	vertexShader,
+const earthGeometry = new SphereGeometry(2, 32, 32);
+const earthMaterial = new ShaderMaterial({
 	uniforms,
 });
-const sphereShield = new Mesh(sphereGeometry, sphereMaterial);
-scene.add(sphereShield);
+const earth = new Mesh(earthGeometry, earthMaterial);
+
+scene.add(earth);
+
+function updateSun() {
+	// Vector
+	sunPosition.setFromSpherical(sunSpherical).multiplyScalar(8.0);
+	// Update
+	sun.position.copy(sunPosition);
+}
+updateSun();
 
 /**
  * Events
  */
 
 function render(time: number = 0) {
-	// Loop
+	// Animation Loop
 	requestAnimationFrame(render);
 
 	// Update
-	controls.update(time);
 	stats.update();
+	controls.update(time);
 
-	// Uniform
-	uniforms.uTime.value += 0.01;
-
-	//Render
+	// Render
 	renderer.render(scene, camera);
 }
+
 render();
 
 function resize() {
@@ -133,28 +104,10 @@ function resize() {
 	size.pixelRatio = Math.min(2, window.devicePixelRatio);
 
 	renderer.setSize(size.width, size.height);
+	renderer.setPixelRatio(Math.min(2, size.pixelRatio));
 
 	camera.aspect = size.width / size.height;
 	camera.updateProjectionMatrix();
 }
+
 window.addEventListener('resize', resize);
-
-// Test
-const obj = new Proxy(
-	{
-		name: 'Leo',
-		age: 24,
-	},
-	{
-		get: function (target, propKey, receiver) {
-			console.log(`getting ${propKey}!`);
-			return Reflect.get(target, propKey, receiver);
-		},
-		set: function (target, propKey, value, receiver) {
-			console.log(`setting ${propKey}!`);
-			return Reflect.set(target, propKey, value, receiver);
-		},
-	}
-);
-
-console.log(obj.age);
