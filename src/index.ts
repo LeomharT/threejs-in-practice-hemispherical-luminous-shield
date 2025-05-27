@@ -20,6 +20,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { Pane } from 'tweakpane';
 import earthFragmentShader from './shader/earth/fragment.glsl?raw';
 import earthVertexShader from './shader/earth/vertex.glsl?raw';
 
@@ -72,7 +73,7 @@ const earthNightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
  */
 
 const uniforms = {
-	uSunDirection: new Uniform(new Vector3()),
+	uSunDirection: new Uniform(new Vector3(0, 0, 1.0)),
 
 	uEarthDayMapTexture: new Uniform(earthDayMapTexture),
 	uEarthNightMapTexture: new Uniform(earthNightMapTexture),
@@ -87,7 +88,19 @@ const sun = new Mesh(sunGeometry, sunMaterial);
 
 scene.add(sun);
 
-const earthGeometry = new SphereGeometry(1, 32, 32);
+function updateSun() {
+	// Vector
+	sunPosition.setFromSpherical(sunSpherical);
+
+	// Update
+	sun.position.copy(sunPosition).multiplyScalar(3.0);
+
+	//Uniform
+	uniforms.uSunDirection.value.copy(sun.position);
+}
+updateSun();
+
+const earthGeometry = new SphereGeometry(1, 64, 64);
 const earthMaterial = new ShaderMaterial({
 	uniforms,
 	vertexShader: earthVertexShader,
@@ -95,24 +108,32 @@ const earthMaterial = new ShaderMaterial({
 	transparent: true,
 });
 const earth = new Mesh(earthGeometry, earthMaterial);
-
 scene.add(earth);
-
-function updateSun() {
-	// Vector
-	sunPosition.setFromSpherical(sunSpherical);
-
-	// Update
-	sun.position.copy(sunPosition.multiplyScalar(3.0));
-
-	//Uniform
-	uniforms.uSunDirection.value.copy(sunPosition);
-	console.log(uniforms.uSunDirection.value);
-}
-updateSun();
 
 const axesHelper = new AxesHelper(3);
 scene.add(axesHelper);
+
+/**
+ * Pane
+ */
+
+const pane = new Pane();
+pane.element.parentElement!.style.width = '320px';
+const sunPane = pane.addFolder({ title: '☀️ SUN' });
+sunPane
+	.addBinding(sunSpherical, 'theta', {
+		step: 0.01,
+		min: -Math.PI,
+		max: Math.PI,
+	})
+	.on('change', updateSun);
+sunPane
+	.addBinding(sunSpherical, 'phi', {
+		step: 0.01,
+		min: 0,
+		max: Math.PI,
+	})
+	.on('change', updateSun);
 
 /**
  * Events

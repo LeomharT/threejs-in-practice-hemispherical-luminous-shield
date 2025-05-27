@@ -13,7 +13,7 @@ void main()
     gl_Position = projectionPosition;
 
     // Varying
-    vNormal = modelNormal.xyz;
     vPosition = modelPosition.xyz;
+    vNormal = modelNormal.xyz;
     vUv = uv;
 }
