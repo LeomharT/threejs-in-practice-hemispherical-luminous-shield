@@ -3,6 +3,7 @@
  */
 
 import {
+	AxesHelper,
 	Color,
 	IcosahedronGeometry,
 	Mesh,
@@ -12,12 +13,15 @@ import {
 	ShaderMaterial,
 	SphereGeometry,
 	Spherical,
+	TextureLoader,
 	Uniform,
 	Vector3,
 	WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import earthFragmentShader from './shader/earth/fragment.glsl?raw';
+import earthVertexShader from './shader/earth/vertex.glsl?raw';
 
 const el = document.querySelector('#root') as HTMLDivElement;
 
@@ -50,23 +54,45 @@ const stats = new Stats();
 el.append(stats.dom);
 
 /**
+ * Loaders
+ */
+
+const textureLoader = new TextureLoader();
+textureLoader.setPath('/src/assets/texture/');
+
+/**
+ * Textures
+ */
+
+const earthDayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
+const earthNightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
+
+/**
  * Scenes
  */
 
-const uniforms: Record<string, Uniform> = {};
+const uniforms = {
+	uSunDirection: new Uniform(new Vector3()),
 
-const sunSpherical = new Spherical(0.5, Math.PI / 2);
+	uEarthDayMapTexture: new Uniform(earthDayMapTexture),
+	uEarthNightMapTexture: new Uniform(earthNightMapTexture),
+};
+
+const sunSpherical = new Spherical(1.0, Math.PI / 2, 0.5);
 const sunPosition = new Vector3();
 
-const sunGeometry = new IcosahedronGeometry(0.1, 5);
+const sunGeometry = new IcosahedronGeometry(0.1, 2);
 const sunMaterial = new MeshBasicMaterial({ color: 'yellow' });
 const sun = new Mesh(sunGeometry, sunMaterial);
 
 scene.add(sun);
 
-const earthGeometry = new SphereGeometry(2, 32, 32);
+const earthGeometry = new SphereGeometry(1, 32, 32);
 const earthMaterial = new ShaderMaterial({
 	uniforms,
+	vertexShader: earthVertexShader,
+	fragmentShader: earthFragmentShader,
+	transparent: true,
 });
 const earth = new Mesh(earthGeometry, earthMaterial);
 
@@ -74,11 +100,19 @@ scene.add(earth);
 
 function updateSun() {
 	// Vector
-	sunPosition.setFromSpherical(sunSpherical).multiplyScalar(8.0);
+	sunPosition.setFromSpherical(sunSpherical);
+
 	// Update
-	sun.position.copy(sunPosition);
+	sun.position.copy(sunPosition.multiplyScalar(3.0));
+
+	//Uniform
+	uniforms.uSunDirection.value.copy(sunPosition);
+	console.log(uniforms.uSunDirection.value);
 }
 updateSun();
+
+const axesHelper = new AxesHelper(3);
+scene.add(axesHelper);
 
 /**
  * Events
